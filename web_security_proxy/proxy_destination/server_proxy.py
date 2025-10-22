@@ -8,13 +8,13 @@ from cryptography import exceptions as crypto_exceptions
 
 # Imports des configurations et des fonctions cryptographiques
 from web_security_proxy.config.settings import DESTINATION_PROXY_HOST, DESTINATION_PROXY_PORT, BUFFER_SIZE
-# Puis utilisez settings.DESTINATION_PROXY_HOST, etc.
 from .crypto_server import generate_rsa_keys, decrypt_session_key, encrypt_data, decrypt_data
 
 # --- Fonctions de Gestion de Connexion ---
 
 def handle_proxy_client(client_socket):
     """Gère la connexion du Proxy Source."""
+    target_socket = None
     
     try:
         # --- PHASE 1 : ÉCHANGE DE CLÉ RSA ---
@@ -71,6 +71,7 @@ def handle_proxy_client(client_socket):
         
         # 7. Connexion au serveur web cible
         target_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        target_socket.settimeout(15)  # Timeout de 15 secondes
         target_socket.connect((target_host, target_port))
         print(f"[*] Connecté au serveur web : {target_host}:{target_port}")
         
@@ -78,26 +79,45 @@ def handle_proxy_client(client_socket):
         target_socket.sendall(decrypted_request)
         
         # 9. Relais de la réponse (Réception, CHIFFREMENT, Renvoi au Proxy Source)
-        while True:
-            response_chunk = target_socket.recv(BUFFER_SIZE)
-            if not response_chunk:
-                break
-            
-            # CHIFFREMENT de la réponse
-            encrypted_response = encrypt_data(response_chunk, session_key)
-            
-            # Envoi au Proxy Source
-            client_socket.sendall(encrypted_response)
+        # CORRECTION: Amélioration de la lecture complète de la réponse
+        target_socket.settimeout(2)  # 2 secondes entre chaque chunk
         
-        target_socket.close()
-        print("[*] Relais de la réponse terminé.")
+        total_bytes = 0
+        while True:
+            try:
+                response_chunk = target_socket.recv(BUFFER_SIZE)
+                if not response_chunk:
+                    break
+                
+                total_bytes += len(response_chunk)
+                
+                # CHIFFREMENT de la réponse
+                encrypted_response = encrypt_data(response_chunk, session_key)
+                
+                # Envoi au Proxy Source
+                client_socket.sendall(encrypted_response)
+                
+            except socket.timeout:
+                # Fin normale de la transmission
+                break
+            except socket.error as e:
+                print(f"[!] Erreur lors du relais : {e}")
+                break
+        
+        if target_socket:
+            target_socket.close()
+        print(f"[*] Relais de la réponse terminé ({total_bytes} octets transférés).")
         
     except crypto_exceptions.InvalidTag:
         print("[!!!] ALERTE SÉCURITÉ : Trafic altéré ou clé invalide.")
+    except socket.timeout:
+        print("[!] Timeout lors de la connexion au serveur web.")
     except socket.error as e:
         print(f"[!] Erreur de socket : {e}")
     except Exception as e:
         print(f"[!] Erreur inattendue : {e}")
+        import traceback
+        traceback.print_exc()
     finally:
         client_socket.close()
         print("[*] Fin de la session du Proxy de Sortie.")
@@ -110,7 +130,7 @@ def parse_http_request(request_data):
         
         # Extraire la ligne de requête (ex: "GET / HTTP/1.1")
         request_line = lines[0].split()
-        request_path = request_line[1]
+        request_path = request_line[1] if len(request_line) > 1 else '/'
         
         # Extraire l'hôte depuis les en-têtes
         target_host = None
@@ -119,9 +139,16 @@ def parse_http_request(request_data):
         for line in lines[1:]:
             if line.lower().startswith('host:'):
                 host_header = line.split(':', 1)[1].strip()
+                # CORRECTION: Utiliser rsplit pour gérer les ports correctement
                 if ':' in host_header:
-                    target_host, port_str = host_header.split(':', 1)
-                    target_port = int(port_str)
+                    parts = host_header.rsplit(':', 1)
+                    target_host = parts[0]
+                    try:
+                        target_port = int(parts[1])
+                    except ValueError:
+                        # Si ce n'est pas un port valide, considérer tout comme hostname
+                        target_host = host_header
+                        target_port = 80
                 else:
                     target_host = host_header
                 break
