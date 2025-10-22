@@ -1,59 +1,43 @@
-# Proxy de Sécurité Web
+## Installation
 
-## 📋 Description
-Système de double proxy avec chiffrement de bout en bout du trafic HTTP.
+1.  **Cloner le dépôt :**
+    ```bash
+    git clone <URL_DE_VOTRE_DEPOT>
+    cd Projet731
+    ```
 
-## 🏗️ Architecture
-- **Proxy Source** : Reçoit les requêtes du navigateur, les chiffre
-- **Proxy Destination** : Déchiffre, fait les requêtes au web, renvoie chiffré
+2.  **Créer et activer un environnement virtuel :**
+    ```bash
+    python3 -m venv venv
+    source venv/bin/activate # Sur Linux/macOS
+    # .\venv\Scripts\activate # Sur Windows
+    ```
 
-## 🔐 Sécurité
-- **Échange de clés** : RSA-2048 (OAEP + SHA-256)
-- **Chiffrement des données** : AES-256-GCM
-- **Authentification** : Intégrée via GCM
+3.  **Installer les dépendances :**
+    ```bash
+    pip install -r requirements.txt
+    ```
 
-## 🚀 Installation
-```bash
-# Créer un environnement virtuel
-python -m venv venv
-source venv/bin/activate  # ou venv\Scripts\activate sur Windows
 
-# Installer les dépendances
-pip install cryptography requests
-```
+    ## Utilisation
 
-## ▶️ Utilisation
+Assurez-vous que l'environnement virtuel est activé avant de lancer les commandes suivantes.
 
-### 1. Démarrer le Proxy de Destination
-```bash
-python -m web_security_proxy.proxy_destination.server_proxy
-```
+1.  **Démarrer le Proxy de Destination (Terminal 1) :**
+    ```bash
+    python -m web_security_proxy.proxy_destination.server_proxy
+    ```
 
-### 2. Démarrer le Proxy Source
-```bash
-python -m web_security_proxy.proxy_source.client_proxy
-```
+2.  **Démarrer le Proxy Source (Terminal 2) :**
+    ```bash
+    python -m web_security_proxy.proxy_source.client_proxy
+    ```
 
-### 3. Configurer le navigateur
-- Paramètres proxy HTTP : `127.0.0.1:8080`
+3.  **Lancer les tests de performance et de connectivité (Terminal 3) :**
+    ```bash
+    python web_security_proxy/test/test_proxy_sites.py
+    ```
 
-### 4. Tester
-```bash
-python test/test_proxy_sites.py
-```
-
-## 📊 Performances
-
-[Ajoutez ici vos résultats après avoir lancé les tests]
-
-- **Latence ajoutée** : ~X ms
-- **Dégradation du débit** : ~X%
-- **Sites testés avec succès** : X/Y
-
-## ⚠️ Limitations
-- Supporte uniquement HTTP (pas HTTPS natif)
-- Pas de cache implémenté
-- Handshake RSA à chaque connexion
-
-## 👨‍💻 Auteur
-[Votre nom] - [Date]
+4.  **(Optionnel) Configurer votre navigateur :**
+    *   Hôte HTTP Proxy : `127.0.0.1`
+    *   Port HTTP Proxy : `8080`

@@ -1,3 +1,19 @@
+# Environnement virtuel
 venv/
+
+# Fichiers de compilation Python
 __pycache__/
 *.pyc
+
+# Fichiers de log
+*.log
+
+# Fichiers spécifiques au système d'exploitation (macOS par exemple)
+.DS_Store
+
+# Fichiers d'environnement
+.env
+
+# Fichiers d'IDE (si vous utilisez VS Code, PyCharm, etc.)
+.vscode/
+.idea/
