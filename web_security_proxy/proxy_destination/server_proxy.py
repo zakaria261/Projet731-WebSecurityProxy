@@ -1,4 +1,3 @@
-# Fichier: proxy_destination/server_proxy.py
 
 import socket
 import threading
@@ -6,32 +5,25 @@ import sys
 from urllib.parse import urlparse
 from cryptography import exceptions as crypto_exceptions
 
-# Imports des configurations et des fonctions cryptographiques
 from web_security_proxy.config.settings import DESTINATION_PROXY_HOST, DESTINATION_PROXY_PORT, BUFFER_SIZE
 from .crypto_server import generate_rsa_keys, decrypt_session_key, encrypt_data, decrypt_data
-
-# --- Fonctions de Gestion de Connexion ---
 
 def handle_proxy_client(client_socket):
     """Gère la connexion du Proxy Source."""
     target_socket = None
     
     try:
-        # --- PHASE 1 : ÉCHANGE DE CLÉ RSA ---
         
-        # 1. Réception du message HELLO
         hello = client_socket.recv(BUFFER_SIZE)
         if b"PROXY_SECURITY_HELLO" not in hello:
             raise Exception("Protocole de poignée de main invalide.")
         
         print("[*] Message HELLO reçu du Proxy Source.")
         
-        # 2. Envoi de la clé publique RSA (générée au démarrage)
         from .crypto_server import PUBLIC_KEY_SERIALIZED
         client_socket.sendall(PUBLIC_KEY_SERIALIZED)
         print("[*] Clé publique RSA envoyée.")
         
-        # 3. Réception de la clé de session chiffrée
         encrypted_key_data = b""
         while True:
             chunk = client_socket.recv(BUFFER_SIZE)
@@ -41,18 +33,15 @@ def handle_proxy_client(client_socket):
             if b":END_KEY" in encrypted_key_data:
                 break
         
-        # Extraction de la clé de session chiffrée
         start_idx = encrypted_key_data.find(b"ENCRYPTED_SESSION_KEY:") + len(b"ENCRYPTED_SESSION_KEY:")
         end_idx = encrypted_key_data.find(b":END_KEY")
         encrypted_session_key = encrypted_key_data[start_idx:end_idx]
         
-        # 4. Déchiffrement de la clé de session
         session_key = decrypt_session_key(encrypted_session_key)
         print("[*] Clé de session déchiffrée et établie.")
         
-        # --- PHASE 2 : TRAFIC CHIFFRÉ ---
-        
-        # 5. Réception et déchiffrement de la requête HTTP chiffrée
+
+            
         encrypted_request = client_socket.recv(BUFFER_SIZE)
         if not encrypted_request:
             return
