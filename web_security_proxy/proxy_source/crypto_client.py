@@ -1,4 +1,3 @@
-# Fichier: proxy_source/crypto_client.py
 
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import serialization, hashes
@@ -7,11 +6,9 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography import exceptions as crypto_exceptions
 import os
 
-# Clés globales pour le Proxy Source
 PUBLIC_KEY = None
 SESSION_KEY = None
 
-# --- Fonctions RSA ---
 
 def load_public_key(pem_data):
     """Charge la clé publique RSA reçue du Proxy de Sortie (format PEM)."""
@@ -31,10 +28,8 @@ def generate_and_encrypt_session_key():
     if PUBLIC_KEY is None:
         raise Exception("Clé publique RSA non chargée.")
     
-    # Générer une clé de session AES-256 (32 octets)
     session_key = os.urandom(32)
     
-    # Chiffrer la clé de session avec RSA OAEP
     encrypted_session_key = PUBLIC_KEY.encrypt(
         session_key,
         padding.OAEP(
@@ -47,7 +42,6 @@ def generate_and_encrypt_session_key():
     print(f"[*] Clé de session AES-256 générée et chiffrée ({len(session_key)} octets).")
     return encrypted_session_key, session_key
 
-# --- Fonctions AES (Chiffrement Symétrique) ---
 
 def encrypt_data(data, session_key):
     """Chiffre les données en utilisant AES-256 GCM (IV || Tag || Ciphertext)."""
@@ -68,7 +62,7 @@ def encrypt_data(data, session_key):
 def decrypt_data(encrypted_data, session_key):
     """Déchiffre les données chiffrées par AES-256 GCM et vérifie l'authenticité."""
     
-    if len(encrypted_data) < 28:  # 12 (IV) + 16 (Tag)
+    if len(encrypted_data) < 28:  
         raise ValueError("Bloc chiffré trop court pour contenir IV et Tag.")
     
     iv = encrypted_data[:12]
