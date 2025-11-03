@@ -1,4 +1,3 @@
-# Fichier: proxy_destination/crypto_server.py
 
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.primitives import serialization, hashes
@@ -7,11 +6,10 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography import exceptions as crypto_exceptions
 import os
 
-# Clés globales pour le Proxy de Sortie
 PRIVATE_KEY = None
-PUBLIC_KEY_SERIALIZED = None # Clé publique à envoyer au Proxy Source
+PUBLIC_KEY_SERIALIZED = None 
 
-# --- Fonctions RSA ---
+
 
 def generate_rsa_keys():
     """Génère la paire de clés RSA et sérialise la clé publique."""
@@ -19,14 +17,14 @@ def generate_rsa_keys():
     
     print("[*] Génération de la paire de clés RSA (2048 bits)...")
     
-    # Générer la clé privée
+    
     PRIVATE_KEY = rsa.generate_private_key(
         public_exponent=65537,
         key_size=2048,
         backend=default_backend()
     )
     
-    # Sérialiser la clé publique au format PEM
+   
     public_key = PRIVATE_KEY.public_key()
     PUBLIC_KEY_SERIALIZED = public_key.public_bytes(
         encoding=serialization.Encoding.PEM,
@@ -51,7 +49,7 @@ def decrypt_session_key(encrypted_session_key):
     )
     return session_key
 
-# --- Fonctions AES (Chiffrement Symétrique) ---
+
 
 def encrypt_data(data, session_key):
     """Chiffre les données en utilisant AES-256 GCM (IV || Tag || Ciphertext)."""
@@ -72,7 +70,7 @@ def encrypt_data(data, session_key):
 def decrypt_data(encrypted_data, session_key):
     """Déchiffre les données chiffrées par AES-256 GCM et vérifie l'authenticité."""
     
-    if len(encrypted_data) < 28: # 12 (IV) + 16 (Tag)
+    if len(encrypted_data) < 28: 
         raise ValueError("Bloc chiffré trop court pour contenir IV et Tag.")
 
     iv = encrypted_data[:12]
